@@ -108,8 +108,8 @@ class EuclideanSpatial : public rclcpp::Node
       {
         use_height_ = param.as_bool();
       }
-      
-      
+
+
     }
     return result;
   }
@@ -218,7 +218,7 @@ private:
     pcl_euclidean_cluster.setSearchMethod(tree);
     pcl_euclidean_cluster.setInputCloud(pointcloud_ptr);
     pcl_euclidean_cluster.extract(cluster_indices);
-    
+
     // get number of clusters
     int num_clusters = cluster_indices.size();
     if (verbose2)
@@ -258,8 +258,8 @@ private:
       visualization_msgs::msg::Marker center_marker;
       init_center_marker(center_marker, center_x, center_y, intensity);
       center_marker.header.frame_id = input_msg->header.frame_id;
-      center_marker.header.stamp = this->now();
-      mark_array.markers.push_back(center_marker);     
+      center_marker.header.stamp = input_msg->header.stamp;
+      mark_array.markers.push_back(center_marker);
     }
 
     int num_of_clusters = clusters.size();
@@ -269,18 +269,22 @@ private:
       visualization_msgs::msg::Marker center_marker;
       init_center_marker(center_marker, 0, 0, i);
       center_marker.header.frame_id = input_msg->header.frame_id;
-      center_marker.header.stamp = this->now();
+      center_marker.header.stamp = input_msg->header.stamp;
       center_marker.color.a = 0.0;
       mark_array.markers.push_back(center_marker);
     }
 
     cluster_outline.computeOutline(cloud_cluster, mark_array, 20, max_clust_reached, input_msg->header.frame_id);
+    for (auto & marker : mark_array.markers) {
+      marker.header.stamp = input_msg->header.stamp;
+    }
 
     // Convert to ROS data type
     sensor_msgs::msg::PointCloud2 output_msg;
     pcl::toROSMsg(*cloud_cluster, output_msg);
     // Add the same frame_id as the input, it is not included in pcl PointXYZ
     output_msg.header.frame_id = input_msg->header.frame_id;
+    output_msg.header.stamp = input_msg->header.stamp;
     // Publish the data as a ROS message
     pub_lidar_->publish(output_msg);
     pub_marker_->publish(mark_array);
